@@ -99,13 +99,13 @@ class AuthService
                 'id' => $usuario->id,
                 'username' => $usuario->username,
                 'email' => $usuario->email,
-                'persona' => [
+                'persona' => $usuario->persona ? [
                     'id' => $usuario->persona->id,
                     'nombre_completo' => $usuario->persona->nombre_completo,
                     'numero_documento' => $usuario->persona->numero_documento,
                     'telefono' => $usuario->persona->telefono,
                     'email' => $usuario->persona->email,
-                ],
+                ] : null,
                 'roles' => $usuario->roles->map(function ($rol) {
                     return [
                         'id' => $rol->id,
@@ -170,13 +170,13 @@ class AuthService
             'email' => $usuario->email,
             'activo' => $usuario->activo,
             'ultimo_acceso' => $usuario->ultimo_acceso,
-            'persona' => [
+            'persona' => $usuario->persona ? [
                 'id' => $usuario->persona->id,
                 'nombre_completo' => $usuario->persona->nombre_completo,
                 'numero_documento' => $usuario->persona->numero_documento,
                 'telefono' => $usuario->persona->telefono,
                 'email' => $usuario->persona->email,
-            ],
+            ] : null,
             'roles' => $usuario->roles->map(function ($rol) {
                 return [
                     'id' => $rol->id,

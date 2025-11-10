@@ -9,11 +9,11 @@ use Illuminate\Support\Facades\Route;
 */
 
 // Dominio Auth (rutas públicas y protegidas)
-require __DIR__.'/domains/auth.php';
-
+require __DIR__ . '/domains/auth.php';
+require __DIR__ . '/domains/restaurante.php';
 // Rutas protegidas (requieren autenticación)
 Route::middleware(['auth:sanctum'])->group(function () {
-    
+
     // Aquí irán las rutas de otros dominios
-    
+
 });

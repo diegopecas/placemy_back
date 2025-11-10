@@ -2,47 +2,18 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
-
-class User extends Authenticatable
+/**
+ * Alias de Usuario para compatibilidad con paquetes de Laravel
+ * 
+ * Laravel y muchos paquetes (como Sanctum) esperan que el modelo
+ * de usuario esté en App\Models\User. Este alias mantiene la
+ * compatibilidad mientras seguimos la arquitectura DDD con el
+ * modelo real en App\Domain\Core\Models\Usuario.
+ * 
+ * Este archivo NO contiene lógica - solo hereda de Usuario.
+ */
+class User extends \App\Domain\Core\Models\Usuario
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
-
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+    // Vacío - solo hereda de Usuario
+    // Toda la lógica está en App\Domain\Core\Models\Usuario
 }

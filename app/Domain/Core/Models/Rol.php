@@ -62,4 +62,20 @@ class Rol extends Model
     {
         $this->permisos()->detach($permisoId);
     }
+    
+    /**
+     * Asignar múltiples permisos al rol
+     */
+    public function sincronizarPermisos(array $permisosIds): void
+    {
+        $this->permisos()->sync($permisosIds);
+    }
+    
+    /**
+     * Obtener todos los códigos de permisos
+     */
+    public function getCodigosPermisos(): array
+    {
+        return $this->permisos()->pluck('codigo')->toArray();
+    }
 }

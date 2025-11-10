@@ -7,9 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class Permiso extends Model
 {
     protected $table = 'core_permisos';
-    
+
     public $timestamps = false;
-    
+
     protected $fillable = [
         'codigo',
         'nombre',
@@ -17,11 +17,15 @@ class Permiso extends Model
         'modulo',
         'activo',
     ];
-    
+
     protected $casts = [
         'activo' => 'boolean',
+        'fecha_creacion' => 'datetime',
     ];
-    
+
+    const CREATED_AT = 'fecha_creacion';
+    const UPDATED_AT = null;
+
     // Relaciones
     public function roles()
     {
