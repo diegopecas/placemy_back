@@ -5,5 +5,5 @@ return [
     App\Providers\SharedServiceProvider::class,     
     App\Providers\CoreServiceProvider::class,       
     App\Providers\AuthServiceProvider::class,       
-    App\Providers\RestauranteServiceProvider::class, 
+    App\Providers\EstablecimientoServiceProvider::class, 
 ];

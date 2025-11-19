@@ -3,6 +3,7 @@
 namespace App\Domain\Core\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Domain\Establecimiento\Models\Establecimiento;
 
 class Rol extends Model
 {
@@ -11,6 +12,7 @@ class Rol extends Model
     public $timestamps = false;
 
     protected $fillable = [
+        'establecimiento_id',
         'nombre',
         'descripcion',
         'activo',
@@ -24,7 +26,15 @@ class Rol extends Model
     const CREATED_AT = 'fecha_creacion';
     const UPDATED_AT = null;
 
-    // Relaciones
+    // =====================================================
+    // RELACIONES
+    // =====================================================
+
+    public function establecimiento()
+    {
+        return $this->belongsTo(Establecimiento::class, 'establecimiento_id');
+    }
+
     public function permisos()
     {
         return $this->belongsToMany(
@@ -42,10 +52,13 @@ class Rol extends Model
             'core_usuarios_roles',
             'rol_id',
             'usuario_id'
-        )->withPivot('fecha_asignacion');
+        )->withPivot('fecha_asignacion', 'establecimiento_id');
     }
 
-    // Métodos de negocio
+    // =====================================================
+    // MÉTODOS DE NEGOCIO
+    // =====================================================
+
     public function tienePermiso(string $codigoPermiso): bool
     {
         return $this->permisos()->where('codigo', $codigoPermiso)->exists();

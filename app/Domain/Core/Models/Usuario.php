@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Domain\Establecimiento\Models\Establecimiento;
 
 class Usuario extends Authenticatable
 {
@@ -37,7 +38,10 @@ class Usuario extends Authenticatable
         'password' => 'hashed',
     ];
     
-    // Relaciones
+    // =====================================================
+    // RELACIONES
+    // =====================================================
+    
     public function persona()
     {
         return $this->belongsTo(PersonaNatural::class, 'persona_id');
@@ -50,19 +54,47 @@ class Usuario extends Authenticatable
             'core_usuarios_roles',
             'usuario_id',
             'rol_id'
-        )->withPivot('fecha_asignacion');
+        )->withPivot('fecha_asignacion', 'establecimiento_id');
+    }
+    
+    /**
+     * Obtener roles del usuario en un establecimiento específico
+     */
+    public function rolesEnEstablecimiento(int $establecimientoId)
+    {
+        return $this->belongsToMany(
+            Rol::class,
+            'core_usuarios_roles',
+            'usuario_id',
+            'rol_id'
+        )->withPivot('fecha_asignacion', 'establecimiento_id')
+         ->wherePivot('establecimiento_id', $establecimientoId);
+    }
+    
+    /**
+     * Obtener establecimientos donde el usuario tiene acceso
+     */
+    public function establecimientos()
+    {
+        return Establecimiento::whereIn('id', function ($query) {
+            $query->select('establecimiento_id')
+                  ->from('core_usuarios_roles')
+                  ->where('usuario_id', $this->id);
+        })->get();
     }
     
     // =====================================================
-    // MÉTODOS HELPER PARA PERMISOS
+    // MÉTODOS HELPER PARA PERMISOS POR ESTABLECIMIENTO
     // =====================================================
     
     /**
-     * Verificar si el usuario tiene un permiso específico
+     * Verificar si el usuario tiene un permiso en un establecimiento específico
      */
-    public function hasPermission(string $codigoPermiso): bool
+    public function hasPermissionInEstablecimiento(string $codigoPermiso, int $establecimientoId): bool
     {
-        foreach ($this->roles as $rol) {
+        $roles = $this->rolesEnEstablecimiento($establecimientoId)->with('permisos')->get();
+        
+        foreach ($roles as $rol) {
             foreach ($rol->permisos as $permiso) {
                 if ($permiso->codigo === $codigoPermiso) {
                     return true;
@@ -73,12 +105,12 @@ class Usuario extends Authenticatable
     }
     
     /**
-     * Verificar si el usuario tiene alguno de los permisos
+     * Verificar si el usuario tiene alguno de los permisos en un establecimiento
      */
-    public function hasAnyPermission(array $codigosPermisos): bool
+    public function hasAnyPermissionInEstablecimiento(array $codigosPermisos, int $establecimientoId): bool
     {
         foreach ($codigosPermisos as $codigo) {
-            if ($this->hasPermission($codigo)) {
+            if ($this->hasPermissionInEstablecimiento($codigo, $establecimientoId)) {
                 return true;
             }
         }
@@ -86,12 +118,12 @@ class Usuario extends Authenticatable
     }
     
     /**
-     * Verificar si el usuario tiene todos los permisos
+     * Verificar si el usuario tiene todos los permisos en un establecimiento
      */
-    public function hasAllPermissions(array $codigosPermisos): bool
+    public function hasAllPermissionsInEstablecimiento(array $codigosPermisos, int $establecimientoId): bool
     {
         foreach ($codigosPermisos as $codigo) {
-            if (!$this->hasPermission($codigo)) {
+            if (!$this->hasPermissionInEstablecimiento($codigo, $establecimientoId)) {
                 return false;
             }
         }
@@ -99,46 +131,41 @@ class Usuario extends Authenticatable
     }
     
     /**
-     * Verificar si el usuario tiene un rol específico
+     * Verificar si el usuario tiene un rol en un establecimiento específico
      */
-    public function hasRole(string $nombreRol): bool
+    public function hasRoleInEstablecimiento(string $nombreRol, int $establecimientoId): bool
     {
-        return $this->roles->contains('nombre', $nombreRol);
+        return $this->rolesEnEstablecimiento($establecimientoId)
+                    ->where('nombre', $nombreRol)
+                    ->exists();
     }
     
     /**
-     * Verificar si el usuario tiene alguno de los roles
+     * Obtener todos los permisos del usuario en un establecimiento
      */
-    public function hasAnyRole(array $nombresRoles): bool
-    {
-        foreach ($nombresRoles as $nombre) {
-            if ($this->hasRole($nombre)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    
-    /**
-     * Verificar si el usuario es Super Administrador
-     */
-    public function isSuperAdmin(): bool
-    {
-        return $this->hasRole('Super Administrador');
-    }
-    
-    /**
-     * Obtener todos los permisos del usuario (de todos sus roles)
-     */
-    public function getAllPermissions(): array
+    public function getAllPermissionsInEstablecimiento(int $establecimientoId): array
     {
         $permisos = [];
-        foreach ($this->roles as $rol) {
+        $roles = $this->rolesEnEstablecimiento($establecimientoId)->with('permisos')->get();
+        
+        foreach ($roles as $rol) {
             foreach ($rol->permisos as $permiso) {
                 $permisos[$permiso->codigo] = $permiso;
             }
         }
         return array_values($permisos);
+    }
+    
+    /**
+     * Obtener IDs de establecimientos donde el usuario tiene acceso
+     */
+    public function getEstablecimientosIds(): array
+    {
+        return $this->roles()
+                    ->select('core_usuarios_roles.establecimiento_id')
+                    ->distinct()
+                    ->pluck('establecimiento_id')
+                    ->toArray();
     }
     
     // =====================================================

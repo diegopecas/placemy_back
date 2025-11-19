@@ -2,7 +2,7 @@
 
 ## 📋 CONTEXTO DEL PROYECTO
 
-**PlaceMy** es un sistema de gestión de restaurantes que permite a los meseros tomar pedidos mediante tablets. El sistema está dividido en:
+**PlaceMy** es un sistema de gestión de establecimientos que permite a los meseros tomar pedidos mediante tablets. El sistema está dividido en:
 
 - **Backend API REST**: Laravel 11 + MySQL
 - **Frontend PWA**: Angular (por desarrollar)
@@ -69,7 +69,7 @@ Vamos a crear el dominio **Pedido** paso a paso.
 CREATE TABLE pedido_pedidos (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     numero_pedido VARCHAR(20) UNIQUE NOT NULL,
-    restaurante_id BIGINT UNSIGNED NOT NULL,
+    establecimiento_id BIGINT UNSIGNED NOT NULL,
     mesa_id BIGINT UNSIGNED NOT NULL,
     mesero_id BIGINT UNSIGNED NOT NULL,
     cliente_nombre VARCHAR(255),
@@ -85,12 +85,12 @@ CREATE TABLE pedido_pedidos (
     activo BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP NULL,
     updated_at TIMESTAMP NULL,
-    FOREIGN KEY (restaurante_id) REFERENCES restaurantes(id),
+    FOREIGN KEY (establecimiento_id) REFERENCES establecimientos(id),
     FOREIGN KEY (mesa_id) REFERENCES mesas(id),
     FOREIGN KEY (mesero_id) REFERENCES staff(id),
     FOREIGN KEY (estado_id) REFERENCES pedido_estados(id),
     INDEX idx_numero_pedido (numero_pedido),
-    INDEX idx_restaurante (restaurante_id),
+    INDEX idx_establecimiento (establecimiento_id),
     INDEX idx_estado (estado_id),
     INDEX idx_fecha (fecha_pedido)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -163,9 +163,9 @@ app/Domain/Pedido/
 namespace App\Domain\Pedido\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Domain\Restaurante\Models\Restaurante;
-use App\Domain\Restaurante\Models\Mesa;
-use App\Domain\Restaurante\Models\Staff;
+use App\Domain\Establecimiento\Models\Establecimiento;
+use App\Domain\Establecimiento\Models\Mesa;
+use App\Domain\Establecimiento\Models\Staff;
 
 class Pedido extends Model
 {
@@ -173,7 +173,7 @@ class Pedido extends Model
     
     protected $fillable = [
         'numero_pedido',
-        'restaurante_id',
+        'establecimiento_id',
         'mesa_id',
         'mesero_id',
         'cliente_nombre',
@@ -203,9 +203,9 @@ class Pedido extends Model
     // RELACIONES
     // =====================================================
     
-    public function restaurante()
+    public function establecimiento()
     {
-        return $this->belongsTo(Restaurante::class, 'restaurante_id');
+        return $this->belongsTo(Establecimiento::class, 'establecimiento_id');
     }
     
     public function mesa()
@@ -269,7 +269,7 @@ class Pedido extends Model
 namespace App\Domain\Pedido\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Domain\Restaurante\Models\Plato;
+use App\Domain\Establecimiento\Models\Plato;
 
 class PedidoDetalle extends Model
 {
@@ -366,17 +366,17 @@ class PedidoRepository extends BaseRepository
             ->first();
     }
     
-    public function findByRestaurante(int $restauranteId)
+    public function findByEstablecimiento(int $establecimientoId)
     {
-        return $this->model::where('restaurante_id', $restauranteId)
+        return $this->model::where('establecimiento_id', $establecimientoId)
             ->with(['detalles', 'mesero', 'mesa', 'estado'])
             ->orderBy('created_at', 'desc')
             ->get();
     }
     
-    public function findPendientes(int $restauranteId)
+    public function findPendientes(int $establecimientoId)
     {
-        return $this->model::where('restaurante_id', $restauranteId)
+        return $this->model::where('establecimiento_id', $establecimientoId)
             ->whereHas('estado', function($query) {
                 $query->whereIn('codigo', ['pendiente', 'en_preparacion']);
             })
@@ -406,7 +406,7 @@ interface PedidoServiceInterface
     public function actualizar(int $id, array $data): Pedido;
     public function obtenerPorId(int $id): Pedido;
     public function obtenerPorNumeroPedido(string $numero): Pedido;
-    public function listarPorRestaurante(int $restauranteId);
+    public function listarPorEstablecimiento(int $establecimientoId);
     public function cambiarEstado(int $id, int $estadoId): Pedido;
     public function cancelar(int $id): Pedido;
 }
@@ -539,9 +539,9 @@ class PedidoService implements PedidoServiceInterface
         return $pedido;
     }
     
-    public function listarPorRestaurante(int $restauranteId)
+    public function listarPorEstablecimiento(int $establecimientoId)
     {
-        return $this->pedidoRepository->findByRestaurante($restauranteId);
+        return $this->pedidoRepository->findByEstablecimiento($establecimientoId);
     }
     
     public function cambiarEstado(int $id, int $estadoId): Pedido
@@ -599,7 +599,7 @@ class PedidoService implements PedidoServiceInterface
 
 ---
 
-## PASO 7️⃣: CREAR REQUESTS (VALIDACIONES)
+## PASO 7️⃣: CREAR REQUESTS
 
 ### **app/Domain/Pedido/Requests/CreatePedidoRequest.php**
 
@@ -612,42 +612,39 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class CreatePedidoRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
-        return $this->user()->hasPermission('pedidos.crear');
+        return true;
     }
     
-    public function rules(): array
+    public function rules()
     {
         return [
-            'restaurante_id' => 'required|integer|exists:restaurantes,id',
-            'mesa_id' => 'required|integer|exists:mesas,id',
-            'mesero_id' => 'required|integer|exists:staff,id',
+            'establecimiento_id' => 'required|integer',
+            'mesa_id' => 'required|integer',
+            'mesero_id' => 'required|integer',
+            'estado_id' => 'required|integer',
             'cliente_nombre' => 'nullable|string|max:255',
             'cliente_telefono' => 'nullable|string|max:20',
-            'estado_id' => 'required|integer|exists:pedido_estados,id',
+            'notas' => 'nullable|string',
             'propina' => 'nullable|numeric|min:0',
-            'notas' => 'nullable|string|max:1000',
             
             // Detalles del pedido
-            'detalles' => 'required|array|min:1',
-            'detalles.*.plato_id' => 'required|integer|exists:platos,id',
+            'detalles' => 'nullable|array',
+            'detalles.*.plato_id' => 'required|integer',
             'detalles.*.cantidad' => 'required|integer|min:1',
             'detalles.*.precio_unitario' => 'required|numeric|min:0',
-            'detalles.*.notas_especiales' => 'nullable|string|max:500',
+            'detalles.*.notas_especiales' => 'nullable|string',
         ];
     }
     
-    public function messages(): array
+    public function messages()
     {
         return [
-            'restaurante_id.required' => 'El restaurante es obligatorio',
+            'establecimiento_id.required' => 'El establecimiento es obligatorio',
             'mesa_id.required' => 'La mesa es obligatoria',
             'mesero_id.required' => 'El mesero es obligatorio',
-            'detalles.required' => 'Debe agregar al menos un plato al pedido',
-            'detalles.*.plato_id.required' => 'El plato es obligatorio',
-            'detalles.*.cantidad.required' => 'La cantidad es obligatoria',
-            'detalles.*.cantidad.min' => 'La cantidad debe ser al menos 1',
+            'estado_id.required' => 'El estado es obligatorio',
         ];
     }
 }
@@ -664,18 +661,18 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdatePedidoRequest extends FormRequest
 {
-    public function authorize(): bool
+    public function authorize()
     {
-        return $this->user()->hasPermission('pedidos.editar');
+        return true;
     }
     
-    public function rules(): array
+    public function rules()
     {
         return [
-            'cliente_nombre' => 'sometimes|nullable|string|max:255',
-            'cliente_telefono' => 'sometimes|nullable|string|max:20',
-            'propina' => 'sometimes|nullable|numeric|min:0',
-            'notas' => 'sometimes|nullable|string|max:1000',
+            'cliente_nombre' => 'nullable|string|max:255',
+            'cliente_telefono' => 'nullable|string|max:20',
+            'notas' => 'nullable|string',
+            'propina' => 'nullable|numeric|min:0',
         ];
     }
 }
@@ -708,16 +705,27 @@ class PedidoController extends Controller
         $this->pedidoService = $pedidoService;
     }
     
+    /**
+     * Listar pedidos por establecimiento
+     */
     public function index(Request $request): JsonResponse
     {
         try {
-            $restauranteId = $request->input('restaurante_id');
-            $pedidos = $this->pedidoService->listarPorRestaurante($restauranteId);
+            $establecimientoId = $request->input('establecimiento_id');
+            
+            if (!$establecimientoId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El establecimiento es obligatorio'
+                ], 400);
+            }
+            
+            $pedidos = $this->pedidoService->listarPorEstablecimiento($establecimientoId);
             
             return response()->json([
                 'success' => true,
                 'data' => $pedidos
-            ], 200);
+            ]);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -727,24 +735,9 @@ class PedidoController extends Controller
         }
     }
     
-    public function show(int $id): JsonResponse
-    {
-        try {
-            $pedido = $this->pedidoService->obtenerPorId($id);
-            
-            return response()->json([
-                'success' => true,
-                'data' => $pedido
-            ], 200);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 404);
-        }
-    }
-    
+    /**
+     * Crear nuevo pedido
+     */
     public function store(CreatePedidoRequest $request): JsonResponse
     {
         try {
@@ -764,6 +757,30 @@ class PedidoController extends Controller
         }
     }
     
+    /**
+     * Mostrar pedido específico
+     */
+    public function show(int $id): JsonResponse
+    {
+        try {
+            $pedido = $this->pedidoService->obtenerPorId($id);
+            
+            return response()->json([
+                'success' => true,
+                'data' => $pedido
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Actualizar pedido
+     */
     public function update(UpdatePedidoRequest $request, int $id): JsonResponse
     {
         try {
@@ -773,7 +790,7 @@ class PedidoController extends Controller
                 'success' => true,
                 'message' => 'Pedido actualizado exitosamente',
                 'data' => $pedido
-            ], 200);
+            ]);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -783,19 +800,23 @@ class PedidoController extends Controller
         }
     }
     
+    /**
+     * Cambiar estado del pedido
+     */
     public function cambiarEstado(Request $request, int $id): JsonResponse
     {
         try {
-            $pedido = $this->pedidoService->cambiarEstado(
-                $id,
-                $request->input('estado_id')
-            );
+            $request->validate([
+                'estado_id' => 'required|integer'
+            ]);
+            
+            $pedido = $this->pedidoService->cambiarEstado($id, $request->estado_id);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Estado actualizado exitosamente',
+                'message' => 'Estado cambiado exitosamente',
                 'data' => $pedido
-            ], 200);
+            ]);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -805,6 +826,9 @@ class PedidoController extends Controller
         }
     }
     
+    /**
+     * Cancelar pedido
+     */
     public function cancelar(int $id): JsonResponse
     {
         try {
@@ -814,7 +838,7 @@ class PedidoController extends Controller
                 'success' => true,
                 'message' => 'Pedido cancelado exitosamente',
                 'data' => $pedido
-            ], 200);
+            ]);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -888,7 +912,7 @@ return [
     App\Providers\SharedServiceProvider::class,
     App\Providers\CoreServiceProvider::class,
     App\Providers\AuthServiceProvider::class,
-    App\Providers\RestauranteServiceProvider::class,
+    App\Providers\EstablecimientoServiceProvider::class,
     App\Providers\PedidoServiceProvider::class,  // ← AGREGAR ESTA LÍNEA
 ];
 ```
@@ -932,7 +956,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum'])->group(function () {
     
     // Dominios existentes
-    require __DIR__.'/domains/restaurante.php';
+    require __DIR__.'/domains/establecimiento.php';
     
     // AGREGAR: Nuevo dominio Pedido
     require __DIR__.'/domains/pedido.php';
@@ -1370,21 +1394,21 @@ Reglas de oro:
 ### **REGLA 1: Cada dominio es independiente**
 ```
 ✅ PERMITIDO:
-Domain/Restaurante → puede usar → Domain/Core (usuarios, ubicaciones)
+Domain/Establecimiento → puede usar → Domain/Core (usuarios, ubicaciones)
 Domain/Pedido → puede usar → Domain/Core
-Domain/Pedido → puede usar → Domain/Restaurante (a través de Service)
+Domain/Pedido → puede usar → Domain/Establecimiento (a través de Service)
 
 ❌ PROHIBIDO:
-Domain/Restaurante → NO puede usar → Domain/Pedido
-Domain/Core → NO puede usar → Domain/Restaurante
+Domain/Establecimiento → NO puede usar → Domain/Pedido
+Domain/Core → NO puede usar → Domain/Establecimiento
 
 REGLA 2: Comunicación SOLO a través de Services
 php// ❌ PROHIBIDO
-use App\Domain\Restaurante\Models\Mesa;
+use App\Domain\Establecimiento\Models\Mesa;
 $mesa = Mesa::find($id);
 
 // ✅ PERMITIDO
-use App\Domain\Restaurante\Services\MesaService;
+use App\Domain\Establecimiento\Services\MesaService;
 $mesa = $this->mesaService->obtenerPorId($id);
 
 
@@ -1408,13 +1432,13 @@ REGLA 4: Base de datos separadas lógicamente
 sql-- Aunque estén en la misma BD ahora, NO uses JOINs entre dominios
 
 -- ❌ PROHIBIDO
-SELECT p.*, m.identificacion_mesa, r.nombre
+SELECT p.*, m.identificacion_mesa, e.nombre
 FROM pedido_pedidos p
 JOIN mesas m ON p.mesa_id = m.id           -- ← Cruzando dominios
-JOIN restaurantes r ON m.restaurante_id = r.id;
+JOIN establecimientos e ON m.establecimiento_id = e.id;
 
 -- ✅ PERMITIDO
 SELECT p.* FROM pedido_pedidos p WHERE mesa_id = ?;
--- Y luego llamas al Service de Restaurante para obtener datos de mesa
+-- Y luego llamas al Service de Establecimiento para obtener datos de mesa
 
 **FIN DEL PROMPT DE CONTINUACIÓN**
