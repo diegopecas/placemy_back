@@ -3,28 +3,29 @@
 namespace App\Domain\Establecimiento\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Domain\Establecimiento\Contracts\StaffServiceInterface;
-use App\Domain\Establecimiento\Requests\CreateStaffRequest;
-use App\Domain\Establecimiento\Requests\UpdateStaffRequest;
+use App\Domain\Establecimiento\Contracts\EstablecimientoStaffServiceInterface;
+use App\Domain\Establecimiento\Requests\CreateEstablecimientoStaffRequest;
+use App\Domain\Establecimiento\Requests\UpdateEstablecimientoStaffRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
-class StaffController extends Controller
+class EstablecimientoStaffController extends Controller
 {
     protected $staffService;
     
-    public function __construct(StaffServiceInterface $staffService)
+    public function __construct(EstablecimientoStaffServiceInterface $staffService)
     {
         $this->staffService = $staffService;
     }
     
     /**
-     * Listar staff
+     * Listar staff por establecimiento
      */
-    public function index(Request $request): JsonResponse
+    public function index(Request $request, int $establecimientoId): JsonResponse
     {
         try {
-            $staff = $this->staffService->obtenerTodos();
+            $filtros = $request->only(['cargo_id', 'activo', 'busqueda']);
+            $staff = $this->staffService->listarPorEstablecimiento($establecimientoId, $filtros);
             
             return response()->json([
                 'success' => true,
@@ -61,12 +62,11 @@ class StaffController extends Controller
     }
     
     /**
-     * Crear staff
+     * Crear staff en establecimiento
      */
-    public function store(CreateStaffRequest $request): JsonResponse
+    public function store(CreateEstablecimientoStaffRequest $request): JsonResponse
     {
         try {
-            // Los datos ya vienen validados por el Request
             $staff = $this->staffService->crear($request->validated());
             
             return response()->json([
@@ -86,10 +86,9 @@ class StaffController extends Controller
     /**
      * Actualizar staff
      */
-    public function update(UpdateStaffRequest $request, int $id): JsonResponse
+    public function update(UpdateEstablecimientoStaffRequest $request, int $id): JsonResponse
     {
         try {
-            // Los datos ya vienen validados por el Request
             $staff = $this->staffService->actualizar($id, $request->validated());
             
             return response()->json([
@@ -107,62 +106,16 @@ class StaffController extends Controller
     }
     
     /**
-     * Asignar staff a establecimiento
+     * Eliminar staff (soft delete)
      */
-    public function asignarAEstablecimiento(Request $request, int $id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
         try {
-            $this->staffService->asignarAEstablecimiento(
-                $id,
-                $request->input('establecimiento_id'),
-                $request->all()
-            );
+            $this->staffService->eliminar($id);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Staff asignado al establecimiento exitosamente'
-            ], 200);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
-        }
-    }
-    
-    /**
-     * Actualizar staff en establecimiento
-     */
-    public function actualizarEnEstablecimiento(Request $request, int $id, int $establecimientoId): JsonResponse
-    {
-        try {
-            $this->staffService->actualizarEnEstablecimiento($id, $establecimientoId, $request->all());
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Staff actualizado en establecimiento exitosamente'
-            ], 200);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
-        }
-    }
-    
-    /**
-     * Desasignar staff de establecimiento
-     */
-    public function desasignarDeEstablecimiento(int $id, int $establecimientoId): JsonResponse
-    {
-        try {
-            $this->staffService->desasignarDeEstablecimiento($id, $establecimientoId);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Staff desasignado del establecimiento exitosamente'
+                'message' => 'Staff eliminado exitosamente'
             ], 200);
             
         } catch (\Exception $e) {
@@ -187,6 +140,27 @@ class StaffController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Estado del staff actualizado exitosamente',
+                'data' => $staff
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+        }
+    }
+    
+    /**
+     * Obtener staff por cargo en establecimiento
+     */
+    public function porCargo(int $establecimientoId, int $cargoId): JsonResponse
+    {
+        try {
+            $staff = $this->staffService->obtenerPorCargo($establecimientoId, $cargoId);
+            
+            return response()->json([
+                'success' => true,
                 'data' => $staff
             ], 200);
             

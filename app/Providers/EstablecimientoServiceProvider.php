@@ -9,14 +9,14 @@ use App\Domain\Establecimiento\Contracts\EstablecimientoServiceInterface;
 use App\Domain\Establecimiento\Contracts\MesaServiceInterface;
 use App\Domain\Establecimiento\Contracts\PlatoServiceInterface;
 use App\Domain\Establecimiento\Contracts\ProductoServiceInterface;
-use App\Domain\Establecimiento\Contracts\StaffServiceInterface;
+use App\Domain\Establecimiento\Contracts\EstablecimientoStaffServiceInterface;
 
 // Services
 use App\Domain\Establecimiento\Services\EstablecimientoService;
 use App\Domain\Establecimiento\Services\MesaService;
 use App\Domain\Establecimiento\Services\PlatoService;
 use App\Domain\Establecimiento\Services\ProductoService;
-use App\Domain\Establecimiento\Services\StaffService;
+use App\Domain\Establecimiento\Services\EstablecimientoStaffService;
 
 class EstablecimientoServiceProvider extends ServiceProvider
 {
@@ -30,7 +30,7 @@ class EstablecimientoServiceProvider extends ServiceProvider
         $this->app->bind(MesaServiceInterface::class, MesaService::class);
         $this->app->bind(PlatoServiceInterface::class, PlatoService::class);
         $this->app->bind(ProductoServiceInterface::class, ProductoService::class);
-        $this->app->bind(StaffServiceInterface::class, StaffService::class);
+        $this->app->bind(EstablecimientoStaffServiceInterface::class, EstablecimientoStaffService::class);
     }
 
     /**

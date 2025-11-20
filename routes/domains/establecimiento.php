@@ -5,7 +5,7 @@ use App\Domain\Establecimiento\Controllers\EstablecimientoController;
 use App\Domain\Establecimiento\Controllers\MesaController;
 use App\Domain\Establecimiento\Controllers\PlatoController;
 use App\Domain\Establecimiento\Controllers\ProductoController;
-use App\Domain\Establecimiento\Controllers\StaffController;
+use App\Domain\Establecimiento\Controllers\EstablecimientoStaffController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,12 +17,12 @@ use App\Domain\Establecimiento\Controllers\StaffController;
 |
 */
 
-Route::prefix('Establecimiento')->name('Establecimiento.')->group(function () {
+Route::prefix('establecimiento')->name('establecimiento.')->group(function () {
     
     // =====================================================
-    // EstablecimientoS
+    // ESTABLECIMIENTOS
     // =====================================================
-    Route::prefix('Establecimientos')->name('Establecimientos.')->group(function () {
+    Route::prefix('establecimientos')->name('establecimientos.')->group(function () {
         Route::get('/', [EstablecimientoController::class, 'index'])->name('index');
         Route::get('/{id}', [EstablecimientoController::class, 'show'])->name('show');
         Route::get('/slug/{slug}', [EstablecimientoController::class, 'showBySlug'])->name('showBySlug');
@@ -53,10 +53,10 @@ Route::prefix('Establecimiento')->name('Establecimiento.')->group(function () {
         Route::post('/', [PlatoController::class, 'store'])->name('store');
         Route::put('/{id}', [PlatoController::class, 'update'])->name('update');
         
-        // Gestión de platos en Establecimientos
-        Route::post('/{id}/asignar-Establecimiento', [PlatoController::class, 'asignarAEstablecimiento'])->name('asignarAEstablecimiento');
-        Route::put('/{id}/Establecimiento/{EstablecimientoId}', [PlatoController::class, 'actualizarEnEstablecimiento'])->name('actualizarEnEstablecimiento');
-        Route::delete('/{id}/Establecimiento/{EstablecimientoId}', [PlatoController::class, 'desasignarDeEstablecimiento'])->name('desasignarDeEstablecimiento');
+        // Gestión de platos en establecimientos
+        Route::post('/{id}/asignar-establecimiento', [PlatoController::class, 'asignarAEstablecimiento'])->name('asignarAEstablecimiento');
+        Route::put('/{id}/establecimiento/{establecimientoId}', [PlatoController::class, 'actualizarEnEstablecimiento'])->name('actualizarEnEstablecimiento');
+        Route::delete('/{id}/establecimiento/{establecimientoId}', [PlatoController::class, 'desasignarDeEstablecimiento'])->name('desasignarDeEstablecimiento');
     });
     
     // =====================================================
@@ -68,26 +68,27 @@ Route::prefix('Establecimiento')->name('Establecimiento.')->group(function () {
         Route::post('/', [ProductoController::class, 'store'])->name('store');
         Route::put('/{id}', [ProductoController::class, 'update'])->name('update');
         
-        // Gestión de productos en Establecimientos
-        Route::post('/{id}/asignar-Establecimiento', [ProductoController::class, 'asignarAEstablecimiento'])->name('asignarAEstablecimiento');
-        Route::put('/{id}/Establecimiento/{EstablecimientoId}', [ProductoController::class, 'actualizarEnEstablecimiento'])->name('actualizarEnEstablecimiento');
-        Route::delete('/{id}/Establecimiento/{EstablecimientoId}', [ProductoController::class, 'desasignarDeEstablecimiento'])->name('desasignarDeEstablecimiento');
+        // Gestión de productos en establecimientos
+        Route::post('/{id}/asignar-establecimiento', [ProductoController::class, 'asignarAEstablecimiento'])->name('asignarAEstablecimiento');
+        Route::put('/{id}/establecimiento/{establecimientoId}', [ProductoController::class, 'actualizarEnEstablecimiento'])->name('actualizarEnEstablecimiento');
+        Route::delete('/{id}/establecimiento/{establecimientoId}', [ProductoController::class, 'desasignarDeEstablecimiento'])->name('desasignarDeEstablecimiento');
     });
     
     // =====================================================
-    // STAFF
+    // STAFF (por establecimiento)
     // =====================================================
+    Route::prefix('establecimientos/{establecimientoId}/staff')->name('staff.')->group(function () {
+        Route::get('/', [EstablecimientoStaffController::class, 'index'])->name('index');
+        Route::get('/cargo/{cargoId}', [EstablecimientoStaffController::class, 'porCargo'])->name('porCargo');
+    });
+    
+    // Staff individual (CRUD)
     Route::prefix('staff')->name('staff.')->group(function () {
-        Route::get('/', [StaffController::class, 'index'])->name('index');
-        Route::get('/{id}', [StaffController::class, 'show'])->name('show');
-        Route::post('/', [StaffController::class, 'store'])->name('store');
-        Route::put('/{id}', [StaffController::class, 'update'])->name('update');
-        Route::patch('/{id}/estado', [StaffController::class, 'cambiarEstado'])->name('cambiarEstado');
-        
-        // Gestión de staff en Establecimientos
-        Route::post('/{id}/asignar-Establecimiento', [StaffController::class, 'asignarAEstablecimiento'])->name('asignarAEstablecimiento');
-        Route::put('/{id}/Establecimiento/{EstablecimientoId}', [StaffController::class, 'actualizarEnEstablecimiento'])->name('actualizarEnEstablecimiento');
-        Route::delete('/{id}/Establecimiento/{EstablecimientoId}', [StaffController::class, 'desasignarDeEstablecimiento'])->name('desasignarDeEstablecimiento');
+        Route::get('/{id}', [EstablecimientoStaffController::class, 'show'])->name('show');
+        Route::post('/', [EstablecimientoStaffController::class, 'store'])->name('store');
+        Route::put('/{id}', [EstablecimientoStaffController::class, 'update'])->name('update');
+        Route::delete('/{id}', [EstablecimientoStaffController::class, 'destroy'])->name('destroy');
+        Route::patch('/{id}/estado', [EstablecimientoStaffController::class, 'cambiarEstado'])->name('cambiarEstado');
     });
     
 });
@@ -95,7 +96,7 @@ Route::prefix('Establecimiento')->name('Establecimiento.')->group(function () {
 // =====================================================
 // CATÁLOGOS (Solo lectura - cualquier usuario autenticado)
 // =====================================================
-Route::middleware(['auth:sanctum'])->prefix('Establecimiento')->name('Establecimiento.')->group(function () {
+Route::middleware(['auth:sanctum'])->prefix('establecimiento')->name('establecimiento.')->group(function () {
     
     // Obtener todos los catálogos de una vez
     Route::get('/catalogos', [\App\Domain\Establecimiento\Controllers\CatalogoController::class, 'index'])

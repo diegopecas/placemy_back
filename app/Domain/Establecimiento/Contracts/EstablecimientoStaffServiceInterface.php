@@ -2,7 +2,7 @@
 
 namespace App\Domain\Establecimiento\Contracts;
 
-interface StaffServiceInterface
+interface EstablecimientoStaffServiceInterface
 {
     public function listarPorEstablecimiento(int $establecimientoId, array $filtros = []): array;
     
@@ -14,7 +14,7 @@ interface StaffServiceInterface
     
     public function eliminar(int $id): bool;
     
-    public function asignarAEstablecimiento(int $staffId, int $establecimientoId, int $cargoId, int $usuarioId): array;
+    public function cambiarEstado(int $id, bool $activo): array;
     
-    public function desasignarDeEstablecimiento(int $staffId, int $establecimientoId): bool;
+    public function obtenerPorCargo(int $establecimientoId, int $cargoId): array;
 }
