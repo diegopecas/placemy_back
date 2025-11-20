@@ -61,5 +61,10 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 ## Estructura proyecto
 tree /F app > estructura_app.txt
 
+## Clean cache
+php artisan route:clear
+php artisan config:clear
+php artisan cache:clear
+
 ## Star Server
 php artisan serve  

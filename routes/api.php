@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Route;
 // Dominio Auth (rutas públicas y protegidas)
 require __DIR__ . '/domains/auth.php';
 require __DIR__ . '/domains/establecimiento.php';
+require __DIR__ . '/domains/cliente.php';
 // Rutas protegidas (requieren autenticación)
 Route::middleware(['auth:sanctum'])->group(function () {
 
