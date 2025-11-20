@@ -43,7 +43,37 @@ Te adjunto la estructura en otro archivo
 
 Te adjunto la estructura completa en otro archivo
 
+🔐 PERMISOS POR ESTABLECIMIENTO
+Un usuario puede tener diferentes roles en diferentes establecimientos.
+Tablas Clave
 
+core_roles tiene establecimiento_id (rol pertenece a un establecimiento)
+core_usuarios_roles tiene establecimiento_id (asignación es por establecimiento)
+
+Respuesta del Login
+json{
+  "user": { "id": 1, "username": "..." },
+  "establecimientos": [
+    {
+      "id": 1,
+      "nombre": "Restaurante A",
+      "roles": [
+        { "id": 1, "nombre": "Admin", "permisos": ["mesas.ver", "mesas.crear"] }
+      ]
+    }
+  ]
+}
+Métodos Usuario.php
+
+getEstablecimientosIds() - IDs de establecimientos del usuario
+rolesEnEstablecimiento($id) - Roles en un establecimiento
+hasPermissionInEstablecimiento($permiso, $id) - Verificar permiso
+
+
+👥 STAFF → ESTABLECIMIENTOSTAFF
+La tabla staff fue eliminada. Ahora establecimiento_staff relaciona directamente usuarios con establecimientos.
+Modelo: EstablecimientoStaff.php (ya no existe Staff.php)
+FK en mesas: establecimiento_staff_id (antes era staff_asignado_id)
 
 ---
 # 🏗️ GUÍA COMPLETA: CREAR NUEVO DOMINIO EN PLACEMY
