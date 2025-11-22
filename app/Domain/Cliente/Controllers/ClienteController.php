@@ -7,6 +7,7 @@ use App\Domain\Cliente\Contracts\ClienteServiceInterface;
 use App\Domain\Cliente\Requests\CreateClienteRequest;
 use App\Domain\Cliente\Requests\UpdateClienteRequest;
 use App\Domain\Cliente\Requests\CreateClienteCompletoRequest;
+use App\Domain\Cliente\Requests\UpdateClienteCompletoRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,6 +22,7 @@ class ClienteController extends Controller
     
     /**
      * Listar clientes
+     * GET /api/cliente/clientes
      */
     public function index(Request $request): JsonResponse
     {
@@ -37,12 +39,13 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 500);
         }
     }
     
     /**
      * Obtener cliente por ID
+     * GET /api/cliente/clientes/{id}
      */
     public function show(int $id): JsonResponse
     {
@@ -58,12 +61,13 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 404);
         }
     }
     
     /**
-     * Crear cliente básico
+     * Crear cliente básico (sin relaciones)
+     * POST /api/cliente/clientes
      */
     public function store(CreateClienteRequest $request): JsonResponse
     {
@@ -80,12 +84,14 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 500);
         }
     }
     
     /**
      * Crear cliente completo (orquestador)
+     * POST /api/cliente/clientes/completo
+     * Crea: Cliente + Alérgenos + Fechas Especiales
      */
     public function storeCompleto(CreateClienteCompletoRequest $request): JsonResponse
     {
@@ -102,12 +108,13 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 500);
         }
     }
     
     /**
-     * Actualizar cliente
+     * Actualizar cliente básico (sin relaciones)
+     * PUT /api/cliente/clientes/{id}
      */
     public function update(UpdateClienteRequest $request, int $id): JsonResponse
     {
@@ -124,12 +131,37 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 500);
+        }
+    }
+    
+    /**
+     * Actualizar cliente completo (orquestador)
+     * PUT /api/cliente/clientes/{id}/completo
+     * Actualiza: Cliente + PersonaNatural + Sync Alérgenos + Fechas Especiales
+     */
+    public function updateCompleto(UpdateClienteCompletoRequest $request, int $id): JsonResponse
+    {
+        try {
+            $cliente = $this->clienteService->actualizarCompleto($id, $request->validated());
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Cliente completo actualizado exitosamente',
+                'data' => $cliente
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
     }
     
     /**
      * Eliminar cliente
+     * DELETE /api/cliente/clientes/{id}
      */
     public function destroy(int $id): JsonResponse
     {
@@ -145,7 +177,7 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage()
-            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+            ], 500);
         }
     }
 }

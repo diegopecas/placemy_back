@@ -153,8 +153,42 @@ CREATE TABLE pedido_estados (
     updated_at TIMESTAMP NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
+🚫 Regla: NO usar ENUM
+**NUNCA usar tipos ENUM en columnas de tablas.**
+
+En lugar de:
+❌ estado ENUM('ACTIVO', 'INACTIVO')
+❌ tipo ENUM('PLATO', 'PRODUCTO')
+
+Crear tabla catálogo:
+✅ Tabla: estados (id, codigo, nombre, activo, created_at, updated_at)
+✅ Tabla: tipos_items (id, codigo, nombre, activo, created_at, updated_at)
+
+Razones:
+- Permite agregar valores sin ALTER TABLE
+- Facilita auditoría y trazabilidad
+- Consistente con arquitectura del proyecto
+- Soporta traducciones y metadata adicional
 
 ---
+📋 Convención: Nomenclatura de Catálogos
+**Tablas catálogo siguen el patrón: [prefijo]_[entidad_plural]**
+
+Prefijos estándar:
+- tipos_xxx → Para clasificaciones de tipo
+- estados_xxx → Para estados de ciclo de vida
+- categorias_xxx → Para agrupaciones categóricas
+- canales_xxx → Para canales de comunicación
+- metodos_xxx → Para métodos (pago, contacto, etc)
+
+Ejemplos:
+✅ tipos_impuestos (no impuesto_tipos)
+✅ tipos_documento (no documento_tipos)
+✅ estados_mesa (no mesa_estados)
+✅ categorias_menu (no menu_categorias)
+✅ metodos_pago (no pago_metodos)
+
+IMPORTANTE: Siempre plural y prefijo primero.
 
 ## PASO 2️⃣: CREAR ESTRUCTURA DE CARPETAS
 
