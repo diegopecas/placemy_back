@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Route;
 require __DIR__ . '/domains/auth.php';
 require __DIR__ . '/domains/establecimiento.php';
 require __DIR__ . '/domains/cliente.php';
+require __DIR__ . '/domains/cuenta.php';
 // Rutas protegidas (requieren autenticación)
 Route::middleware(['auth:sanctum'])->group(function () {
 

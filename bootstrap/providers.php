@@ -7,4 +7,5 @@ return [
     App\Providers\AuthServiceProvider::class,       
     App\Providers\EstablecimientoServiceProvider::class, 
     App\Providers\ClienteServiceProvider::class,
+    App\Providers\CuentaServiceProvider::class, 
 ];
