@@ -1506,3 +1506,90 @@ SELECT p.* FROM pedido_pedidos p WHERE mesa_id = ?;
 -- Y luego llamas al Service de Establecimiento para obtener datos de mesa
 
 **FIN DEL PROMPT DE CONTINUACIÓN**
+
+# 🎯 ÍNDICE MAESTRO - SISTEMA DE PERMISOS POR ESTABLECIMIENTO
+
+## 📦 Archivos Disponibles para Descarga
+
+---
+
+## 🗄️ BASE DE DATOS
+
+### Script SQL Principal
+**[PERMISOS_COMPLETO.sql](computer:///mnt/user-data/outputs/PERMISOS_COMPLETO.sql)** (17 KB)
+- Crea backup automático
+- Borra y recrea 100 permisos
+- Asigna todos los permisos a roles Admin (ID 1 y 2)
+- Incluye verificaciones completas
+
+**Total de permisos**: 100
+- Core (administración): 48
+- Establecimiento: 32
+- Clientes: 13
+- Cuentas: 5
+
+---
+
+## 🔐 MIDDLEWARE
+
+**[CheckPermission.php](computer:///mnt/user-data/outputs/CheckPermission.php)** (3.5 KB)
+- Ubicación: `app/Http/Middleware/CheckPermission.php`
+- Valida permisos POR ESTABLECIMIENTO
+- Requiere `establecimiento_id` en cada request
+- Mensajes de error descriptivos
+
+---
+
+## 🛣️ ARCHIVOS DE RUTAS
+
+### [establecimiento.php](computer:///mnt/user-data/outputs/establecimiento.php) (14 KB)
+**Ubicación**: `routes/establecimiento.php`
+
+**Permisos aplicados** (32 permisos):
+- ✅ Establecimientos (5): ver, crear, editar, eliminar, verificar
+- ✅ Mesas (4): ver, crear, editar, eliminar
+- ✅ Zonas (4): ver, crear, editar, eliminar
+- ✅ Categorías Menú (4): ver, crear, editar, eliminar
+- ✅ Platos (4): ver, crear, editar, eliminar (incluye asignación)
+- ✅ Productos (4): ver, crear, editar, eliminar (incluye asignación)
+- ✅ Personal (4): ver, crear, editar, eliminar
+- ✅ Cargos (3): ver, crear, editar, eliminar
+
+**Total**: ~45 rutas protegidas
+
+---
+
+### [cliente.php](computer:///mnt/user-data/outputs/cliente.php) (8 KB)
+**Ubicación**: `routes/cliente.php`
+
+**Permisos aplicados** (13 permisos):
+- ✅ Clientes (4): ver, crear, editar, eliminar (incluye alergenos)
+- ✅ Campañas (4): ver, crear, editar, eliminar
+- ✅ Reseñas (5): ver, crear, editar, eliminar, responder
+
+**Total**: ~25 rutas protegidas
+
+---
+
+### [cuenta.php](computer:///mnt/user-data/outputs/cuenta.php) (8.5 KB) ⭐
+**Ubicación**: `routes/cuenta.php`
+
+**Permisos SIMPLIFICADOS** (5 permisos):
+- ✅ `cuentas.ver` → Ver TODO (cuentas, items, divisiones, pagos, interacciones)
+- ✅ `cuentas.crear` → Crear cuentas y agregar items/interacciones
+- ✅ `cuentas.editar` → Editar TODO
+- ✅ `cuentas.cerrar` → Cerrar cuentas y procesar pagos
+- ✅ `cuentas.cancelar` → Cancelar cuentas
+
+**Total**: ~30 rutas protegidas
+
+**Nota**: Permisos consolidados - NO más `cuenta_items.*` ni `interacciones.*`
+
+---
+
+### [auth.php](computer:///mnt/user-data/outputs/auth.php) (1.5 KB)
+**Ubicación**: `routes/auth.php`
+
+Rutas de autenticación (sin cambios significativos)
+
+---

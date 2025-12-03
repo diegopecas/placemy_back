@@ -8,6 +8,7 @@ use App\Domain\Establecimiento\Models\Mesa;
 use App\Domain\Shared\Exceptions\BusinessException;
 use App\Domain\Shared\Services\AuditoriaService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Collection;
 
 class MesaService implements MesaServiceInterface
 {
@@ -20,6 +21,23 @@ class MesaService implements MesaServiceInterface
     ) {
         $this->mesaRepository = $mesaRepository;
         $this->auditoriaService = $auditoriaService;
+    }
+    
+    /**
+     * Listar mesas por establecimiento con filtros opcionales
+     */
+    public function listarPorEstablecimiento(int $establecimientoId, array $filtros = []): Collection
+    {
+        return $this->mesaRepository->findByEstablecimiento($establecimientoId, $filtros);
+    }
+    
+    /**
+     * Obtener mesa por ID con relaciones
+     */
+    public function obtenerPorId(int $id): Mesa
+    {
+        return $this->mesaRepository->findByIdWithRelations($id)
+            ?? throw new BusinessException('Mesa no encontrada');
     }
     
     /**
@@ -102,6 +120,39 @@ class MesaService implements MesaServiceInterface
     }
     
     /**
+     * Eliminar mesa
+     */
+    public function eliminar(int $id): bool
+    {
+        $mesa = $this->mesaRepository->findByIdOrFail($id);
+        
+        DB::beginTransaction();
+        try {
+            $datosAnteriores = $mesa->toArray();
+            
+            // Eliminar
+            $resultado = $this->mesaRepository->delete($id);
+            
+            // Auditoría
+            $this->auditoriaService->registrar(
+                'mesas',
+                $id,
+                'DELETE',
+                auth()->id(),
+                $datosAnteriores,
+                null
+            );
+            
+            DB::commit();
+            return $resultado;
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+    
+    /**
      * Cambiar estado de mesa
      */
     public function cambiarEstado(int $id, int $estadoId): Mesa
@@ -163,14 +214,5 @@ class MesaService implements MesaServiceInterface
             DB::rollBack();
             throw $e;
         }
-    }
-    
-    /**
-     * Obtener mesa por ID con relaciones
-     */
-    public function obtenerPorId(int $id): Mesa
-    {
-        return $this->mesaRepository->findByIdWithRelations($id)
-            ?? throw new BusinessException('Mesa no encontrada');
     }
 }

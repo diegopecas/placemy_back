@@ -2,19 +2,69 @@
 
 namespace App\Domain\Establecimiento\Contracts;
 
+use App\Domain\Establecimiento\Models\Mesa;
+use Illuminate\Database\Eloquent\Collection;
+
 interface MesaServiceInterface
 {
-    public function listarPorEstablecimiento(int $establecimientoId, array $filtros = []): array;
+    /**
+     * Listar mesas por establecimiento
+     * 
+     * @param int $establecimientoId
+     * @param array $filtros
+     * @return Collection<Mesa>
+     */
+    public function listarPorEstablecimiento(int $establecimientoId, array $filtros = []): Collection;
     
-    public function obtenerPorId(int $id): array;
+    /**
+     * Obtener mesa por ID
+     * 
+     * @param int $id
+     * @return Mesa
+     * @throws \App\Domain\Shared\Exceptions\BusinessException
+     */
+    public function obtenerPorId(int $id): Mesa;
     
-    public function crear(array $datos): array;
+    /**
+     * Crear nueva mesa
+     * 
+     * @param array $datos
+     * @return Mesa
+     */
+    public function crear(array $datos): Mesa;
     
-    public function actualizar(int $id, array $datos): array;
+    /**
+     * Actualizar mesa existente
+     * 
+     * @param int $id
+     * @param array $datos
+     * @return Mesa
+     */
+    public function actualizar(int $id, array $datos): Mesa;
     
+    /**
+     * Eliminar mesa
+     * 
+     * @param int $id
+     * @return bool
+     */
     public function eliminar(int $id): bool;
     
-    public function cambiarEstado(int $id, int $estadoId): array;
+    /**
+     * Cambiar estado de mesa
+     * 
+     * @param int $id
+     * @param int $estadoId
+     * @return Mesa
+     */
+    public function cambiarEstado(int $id, int $estadoId): Mesa;
     
-    public function asignarMesero(int $id, int $staffId): array;
+    /**
+     * Asignar staff a mesa
+     * 
+     * @param int $id
+     * @param int|null $staffId
+     * @return Mesa
+     */
+    public function asignarStaff(int $id, ?int $staffId): Mesa;
 }

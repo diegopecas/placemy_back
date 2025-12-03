@@ -14,7 +14,7 @@ class EstablecimientoService implements EstablecimientoServiceInterface
 {
     protected $establecimientoRepository;
     protected $auditoriaService;
-    
+
     public function __construct(
         EstablecimientoRepository $establecimientoRepository,
         AuditoriaService $auditoriaService
@@ -22,7 +22,7 @@ class EstablecimientoService implements EstablecimientoServiceInterface
         $this->establecimientoRepository = $establecimientoRepository;
         $this->auditoriaService = $auditoriaService;
     }
-    
+
     /**
      * Crear establecimiento con validaciones explícitas
      */
@@ -32,17 +32,17 @@ class EstablecimientoService implements EstablecimientoServiceInterface
         if (!isset($data['slug'])) {
             $data['slug'] = Str::slug($data['nombre']);
         }
-        
+
         // Validar que no exista slug duplicado
         if ($this->establecimientoRepository->existeSlug($data['slug'])) {
             throw new BusinessException('Ya existe un establecimiento con este slug');
         }
-        
+
         DB::beginTransaction();
         try {
             // Crear establecimiento
             $establecimiento = $this->establecimientoRepository->create($data);
-            
+
             // Auditoría
             $this->auditoriaService->registrar(
                 'establecimientos',
@@ -52,16 +52,15 @@ class EstablecimientoService implements EstablecimientoServiceInterface
                 null,
                 $establecimiento->toArray()
             );
-            
+
             DB::commit();
             return $establecimiento;
-            
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
     }
-    
+
     /**
      * Actualizar establecimiento
      */
@@ -69,19 +68,19 @@ class EstablecimientoService implements EstablecimientoServiceInterface
     {
         // Validar que el establecimiento existe
         $establecimiento = $this->establecimientoRepository->findByIdOrFail($id);
-        
+
         // Validar slug único (excluyendo el actual)
         if (isset($data['slug']) && $this->establecimientoRepository->existeSlug($data['slug'], $id)) {
             throw new BusinessException('Ya existe otro establecimiento con este slug');
         }
-        
+
         DB::beginTransaction();
         try {
             $datosAnteriores = $establecimiento->toArray();
-            
+
             // Actualizar
             $establecimientoActualizado = $this->establecimientoRepository->update($id, $data);
-            
+
             // Auditoría
             $this->auditoriaService->registrar(
                 'establecimientos',
@@ -91,16 +90,15 @@ class EstablecimientoService implements EstablecimientoServiceInterface
                 $datosAnteriores,
                 $establecimientoActualizado->toArray()
             );
-            
+
             DB::commit();
             return $establecimientoActualizado;
-            
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
     }
-    
+
     /**
      * Obtener establecimiento por ID con relaciones
      */
@@ -109,7 +107,7 @@ class EstablecimientoService implements EstablecimientoServiceInterface
         return $this->establecimientoRepository->findByIdWithRelations($id)
             ?? throw new BusinessException('Establecimiento no encontrado');
     }
-    
+
     /**
      * Obtener establecimiento por slug
      */
@@ -118,20 +116,20 @@ class EstablecimientoService implements EstablecimientoServiceInterface
         return $this->establecimientoRepository->findBySlug($slug)
             ?? throw new BusinessException('Establecimiento no encontrado');
     }
-    
+
     /**
      * Activar/Desactivar establecimiento
      */
     public function cambiarEstado(int $id, bool $activo): Establecimiento
     {
         $establecimiento = $this->establecimientoRepository->findByIdOrFail($id);
-        
+
         DB::beginTransaction();
         try {
             $datosAnteriores = $establecimiento->toArray();
-            
+
             $establecimientoActualizado = $this->establecimientoRepository->update($id, ['activo' => $activo]);
-            
+
             // Auditoría
             $this->auditoriaService->registrar(
                 'establecimientos',
@@ -141,29 +139,28 @@ class EstablecimientoService implements EstablecimientoServiceInterface
                 $datosAnteriores,
                 $establecimientoActualizado->toArray()
             );
-            
+
             DB::commit();
             return $establecimientoActualizado;
-            
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
     }
-    
+
     /**
      * Verificar establecimiento
      */
     public function verificar(int $id, bool $verificado): Establecimiento
     {
         $establecimiento = $this->establecimientoRepository->findByIdOrFail($id);
-        
+
         DB::beginTransaction();
         try {
             $datosAnteriores = $establecimiento->toArray();
-            
+
             $establecimientoActualizado = $this->establecimientoRepository->update($id, ['verificado' => $verificado]);
-            
+
             // Auditoría
             $this->auditoriaService->registrar(
                 'establecimientos',
@@ -173,13 +170,34 @@ class EstablecimientoService implements EstablecimientoServiceInterface
                 $datosAnteriores,
                 $establecimientoActualizado->toArray()
             );
-            
+
             DB::commit();
             return $establecimientoActualizado;
-            
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
         }
+    }
+    /**
+     * Obtener todos los establecimientos
+     */
+    public function obtenerTodos(): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->establecimientoRepository->all();
+    }
+
+    /**
+     * Obtener menú completo del establecimiento
+     */
+    public function obtenerMenu(int $establecimientoId): array
+    {
+        // Validar que el establecimiento existe y está activo
+        $establecimiento = $this->establecimientoRepository->findByIdOrFail($establecimientoId);
+
+        if (!$establecimiento->activo) {
+            throw new BusinessException('El establecimiento no está activo', 400);
+        }
+
+        return $this->establecimientoRepository->findMenuByEstablecimiento($establecimientoId);
     }
 }

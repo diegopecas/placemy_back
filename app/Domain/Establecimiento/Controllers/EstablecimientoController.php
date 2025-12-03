@@ -12,12 +12,12 @@ use Illuminate\Http\Request;
 class EstablecimientoController extends Controller
 {
     protected $establecimientoService;
-    
+
     public function __construct(EstablecimientoServiceInterface $establecimientoService)
     {
         $this->establecimientoService = $establecimientoService;
     }
-    
+
     /**
      * Listar establecimientos
      */
@@ -26,12 +26,11 @@ class EstablecimientoController extends Controller
         try {
             // Aquí puedes agregar filtros desde el request
             $establecimientos = $this->establecimientoService->obtenerTodos();
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $establecimientos
             ], 200);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -39,7 +38,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Obtener establecimiento por ID
      */
@@ -47,12 +46,11 @@ class EstablecimientoController extends Controller
     {
         try {
             $establecimiento = $this->establecimientoService->obtenerPorId($id);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $establecimiento
             ], 200);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -60,7 +58,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Obtener establecimiento por slug
      */
@@ -68,12 +66,11 @@ class EstablecimientoController extends Controller
     {
         try {
             $establecimiento = $this->establecimientoService->obtenerPorSlug($slug);
-            
+
             return response()->json([
                 'success' => true,
                 'data' => $establecimiento
             ], 200);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -81,7 +78,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Crear establecimiento
      */
@@ -90,13 +87,12 @@ class EstablecimientoController extends Controller
         try {
             // Los datos ya vienen validados por el Request
             $establecimiento = $this->establecimientoService->crear($request->validated());
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Establecimiento creado exitosamente',
                 'data' => $establecimiento
             ], 201);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -104,7 +100,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Actualizar establecimiento
      */
@@ -113,13 +109,12 @@ class EstablecimientoController extends Controller
         try {
             // Los datos ya vienen validados por el Request
             $establecimiento = $this->establecimientoService->actualizar($id, $request->validated());
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Establecimiento actualizado exitosamente',
                 'data' => $establecimiento
             ], 200);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -127,7 +122,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Cambiar estado del establecimiento
      */
@@ -138,13 +133,12 @@ class EstablecimientoController extends Controller
                 $id,
                 $request->input('activo', true)
             );
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Estado actualizado exitosamente',
                 'data' => $establecimiento
             ], 200);
-            
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -152,7 +146,7 @@ class EstablecimientoController extends Controller
             ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
         }
     }
-    
+
     /**
      * Verificar establecimiento
      */
@@ -163,13 +157,31 @@ class EstablecimientoController extends Controller
                 $id,
                 $request->input('verificado', true)
             );
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Establecimiento verificado exitosamente',
                 'data' => $establecimiento
             ], 200);
-            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], is_numeric($e->getCode()) ? (int)$e->getCode() : 500);
+        }
+    }
+    /**
+     * Obtener menú completo del establecimiento (platos y productos disponibles)
+     */
+    public function obtenerMenu(int $id): JsonResponse
+    {
+        try {
+            $menu = $this->establecimientoService->obtenerMenu($id);
+
+            return response()->json([
+                'success' => true,
+                'data' => $menu
+            ], 200);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
