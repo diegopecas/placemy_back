@@ -28,6 +28,10 @@ Route::prefix('cuentas')->name('cuentas.')->group(function () {
     // CATÁLOGOS (Públicos - Sin autenticación)
     // =====================================================
     
+    // ✅ NUEVO: Todos los catálogos en una sola petición
+    Route::get('/catalogos', [CatalogoController::class, 'index'])
+        ->name('catalogos.index');
+    
     // Estados de cuenta
     Route::get('/catalogos/estados', [CatalogoController::class, 'estadosCuenta'])
         ->name('catalogos.estados');

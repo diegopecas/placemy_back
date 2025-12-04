@@ -9,6 +9,60 @@ use Illuminate\Support\Facades\DB;
 class CatalogoController extends Controller
 {
     /**
+     * Obtener todos los catálogos (consolidado)
+     * ✅ NUEVO: Retorna todos los catálogos en una sola petición
+     */
+    public function index(): JsonResponse
+    {
+        try {
+            $data = [
+                'estados_cuenta' => DB::table('cuenta_estados')
+                    ->where('activo', true)
+                    ->orderBy('orden')
+                    ->get(),
+                    
+                'estados_item' => DB::table('cuenta_item_estados')
+                    ->where('activo', true)
+                    ->orderBy('orden')
+                    ->get(),
+                    
+                'tipos_impuestos' => DB::table('tipos_impuestos')
+                    ->where('activo', true)
+                    ->get(),
+                    
+                'tipos_items' => DB::table('tipos_items')
+                    ->where('activo', true)
+                    ->get(),
+                    
+                'categorias_interacciones' => DB::table('categorias_interacciones')
+                    ->where('activo', true)
+                    ->orderBy('orden')
+                    ->get(),
+                    
+                'tipos_interacciones' => DB::table('tipos_interacciones')
+                    ->where('activo', true)
+                    ->get(),
+                    
+                'estados_interacciones' => DB::table('interaccion_estados')
+                    ->where('activo', true)
+                    ->orderBy('orden')
+                    ->get(),
+            ];
+            
+            return response()->json([
+                'success' => true,
+                'data' => $data
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
      * Obtener estados de cuenta
      */
     public function estadosCuenta(): JsonResponse

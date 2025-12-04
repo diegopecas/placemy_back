@@ -38,7 +38,7 @@ class Plato extends Model
             'plato_alergenos',
             'plato_id',
             'alergeno_id'
-        )->withTimestamps();
+        );  // ✅ CORREGIDO: Sin withTimestamps() porque la tabla pivot no tiene created_at/updated_at
     }
     
     public function productos()

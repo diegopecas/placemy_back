@@ -29,7 +29,7 @@ class CheckPermission
             ], 401);
         }
         
-        // 2. Obtener establecimiento_id del request
+        // 2. Obtener establecimiento_id del request (header, query, body, route)
         $establecimientoId = $this->getEstablecimientoId($request);
         
         if (!$establecimientoId) {
@@ -74,26 +74,31 @@ class CheckPermission
     
     /**
      * Obtener establecimiento_id del request
-     * Busca en: query params, body, route params
+     * Busca en: header (prioridad), query params, body, route params
      */
     protected function getEstablecimientoId(Request $request): int|string|null
     {
-        // 1. Buscar en query params (?establecimiento_id=1)
-        if ($request->has('establecimiento_id')) {
+        // 1. ✅ PRIMERO: Buscar en header X-Establecimiento-Id (desde interceptor Angular)
+        if ($request->header('X-Establecimiento-Id')) {
+            return $request->header('X-Establecimiento-Id');
+        }
+        
+        // 2. Buscar en query params (?establecimiento_id=1)
+        if ($request->query('establecimiento_id')) {
             return $request->query('establecimiento_id');
         }
         
-        // 2. Buscar en body (POST/PUT/PATCH)
-        if ($request->has('establecimiento_id')) {
+        // 3. Buscar en body (POST/PUT/PATCH)
+        if ($request->input('establecimiento_id')) {
             return $request->input('establecimiento_id');
         }
         
-        // 3. Buscar en route params (/establecimientos/{establecimientoId}/staff)
+        // 4. Buscar en route params (/establecimientos/{establecimientoId}/staff)
         if ($request->route('establecimientoId')) {
             return $request->route('establecimientoId');
         }
         
-        // 4. Buscar en route params alternativo
+        // 5. Buscar en route params alternativo
         if ($request->route('establecimiento_id')) {
             return $request->route('establecimiento_id');
         }

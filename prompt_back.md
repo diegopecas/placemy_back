@@ -68,7 +68,144 @@ Métodos Usuario.php
 getEstablecimientosIds() - IDs de establecimientos del usuario
 rolesEnEstablecimiento($id) - Roles en un establecimiento
 hasPermissionInEstablecimiento($permiso, $id) - Verificar permiso
+## 🔐 PATRÓN: X-ESTABLECIMIENTO-ID EN TODAS LAS OPERACIONES
 
+### **Problema:**
+El sistema es multi-establecimiento. Un usuario puede tener diferentes permisos en cada establecimiento.
+
+### **Solución Implementada:**
+
+#### **Frontend (Angular):**
+```typescript
+// app/core/interceptors/establecimiento.interceptor.ts
+export const establecimientoInterceptor: HttpInterceptorFn = (req, next) => {
+  const authService = inject(AuthService);
+  const establecimientoId = authService.establecimientoActual()?.id;
+  
+  // Solo agregar header si hay establecimiento seleccionado
+  if (establecimientoId) {
+    req = req.clone({
+      setHeaders: {
+        'X-Establecimiento-Id': establecimientoId.toString()
+      }
+    });
+  }
+  
+  return next(req);
+};
+
+// app/core/services/auth.service.ts
+export class AuthService {
+  establecimientoActual = signal<Establecimiento | null>(null);
+  
+  seleccionarEstablecimiento(establecimiento: Establecimiento): void {
+    this.establecimientoActual.set(establecimiento);
+    localStorage.setItem('establecimiento_actual', JSON.stringify(establecimiento));
+  }
+}
+```
+
+#### **Backend (Laravel):**
+```php
+// app/Http/Middleware/CheckPermission.php
+public function handle(Request $request, Closure $next, string $permission): Response
+{
+    $user = auth()->user();
+    
+    // 1. Leer header X-Establecimiento-Id
+    $establecimientoId = $request->header('X-Establecimiento-Id');
+    
+    // 2. Validar que el header exista
+    if (!$establecimientoId) {
+        return response()->json([
+            'success' => false,
+            'message' => 'El header X-Establecimiento-Id es requerido'
+        ], 400);
+    }
+    
+    // 3. Validar que el usuario tenga acceso a ese establecimiento
+    if (!in_array($establecimientoId, $user->getEstablecimientosIds())) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No tienes acceso a este establecimiento'
+        ], 403);
+    }
+    
+    // 4. Validar permiso específico EN ese establecimiento
+    if (!$user->hasPermissionInEstablecimiento($permission, $establecimientoId)) {
+        return response()->json([
+            'success' => false,
+            'message' => "No tienes el permiso '{$permission}' en este establecimiento"
+        ], 403);
+    }
+    
+    // 5. Inyectar establecimiento_id en el request para uso posterior
+    $request->merge(['establecimiento_id' => (int)$establecimientoId]);
+    
+    return $next($request);
+}
+```
+
+#### **Uso en Controllers:**
+```php
+// El establecimiento_id ya está disponible en $request
+public function store(CreateMesaRequest $request): JsonResponse
+{
+    // Automáticamente disponible gracias al middleware
+    $establecimientoId = $request->input('establecimiento_id');
+    
+    $mesa = $this->mesaService->crear([
+        'establecimiento_id' => $establecimientoId,
+        'identificacion_mesa' => $request->input('identificacion_mesa'),
+        // ... otros campos
+    ]);
+    
+    return response()->json([
+        'success' => true,
+        'data' => $mesa
+    ], 201);
+}
+```
+
+### **REGLAS DE ORO:**
+
+✅ **TODA petición protegida DEBE incluir X-Establecimiento-Id en el header**
+✅ **TODA operación DEBE validar permisos POR establecimiento**
+✅ **NUNCA asumir el establecimiento del usuario - siempre validar**
+✅ **Middleware CheckPermission valida 3 cosas:**
+   1. Header X-Establecimiento-Id existe
+   2. Usuario tiene acceso a ese establecimiento
+   3. Usuario tiene el permiso específico en ese establecimiento
+
+### **Excepciones (NO requieren X-Establecimiento-Id):**
+- ❌ `POST /api/auth/login` - Autenticación inicial
+- ❌ `POST /api/auth/logout` - Cierre de sesión
+- ❌ `POST /api/auth/refresh` - Renovar token
+- ❌ `GET /api/auth/me` - Obtener datos del usuario (retorna lista de establecimientos)
+- ✅ **TODO LO DEMÁS** - Requiere X-Establecimiento-Id
+
+### **Beneficios:**
+1. 🔐 **Seguridad**: Permisos granulares por establecimiento
+2. 🎯 **Escalabilidad**: Fácil agregar nuevos establecimientos
+3. 🚀 **Transparencia**: Frontend no hace lógica de permisos
+4. 🐛 **Debugging**: Errores claros y específicos
+5. 📊 **Auditoría**: Todas las operaciones tienen establecimiento asociado
+
+### **Ejemplo de flujo completo:**
+```
+1. Usuario hace login → Recibe lista de establecimientos
+2. Frontend: Usuario selecciona "Restaurante A" (ID: 1)
+3. Frontend: Interceptor agrega X-Establecimiento-Id: 1 a TODAS las peticiones
+4. Backend: CheckPermission valida:
+   - ¿Existe el header? ✅
+   - ¿Usuario tiene acceso a establecimiento 1? ✅
+   - ¿Usuario tiene permiso "mesas.crear" en establecimiento 1? ✅
+5. Backend: Inyecta establecimiento_id en $request
+6. Controller: Usa establecimiento_id directamente
+7. Service: Crea la mesa asociada al establecimiento 1
+```
+
+---
 
 👥 STAFF → ESTABLECIMIENTOSTAFF
 La tabla staff fue eliminada. Ahora establecimiento_staff relaciona directamente usuarios con establecimientos.

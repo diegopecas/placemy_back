@@ -24,6 +24,40 @@ class EstablecimientoService implements EstablecimientoServiceInterface
     }
 
     /**
+     * Listar establecimientos con filtros
+     */
+    public function listar(array $filtros = []): array
+    {
+        $query = Establecimiento::query();
+
+        // Filtro por activo
+        if (isset($filtros['activo'])) {
+            $query->where('activo', $filtros['activo']);
+        }
+
+        // Filtro por verificado
+        if (isset($filtros['verificado'])) {
+            $query->where('verificado', $filtros['verificado']);
+        }
+
+        // Filtro por búsqueda (nombre o slug)
+        if (isset($filtros['search'])) {
+            $search = $filtros['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('slug', 'like', "%{$search}%");
+            });
+        }
+
+        $establecimientos = $query->orderBy('nombre')->get();
+
+        return [
+            'success' => true,
+            'data' => $establecimientos
+        ];
+    }
+
+    /**
      * Crear establecimiento con validaciones explícitas
      */
     public function crear(array $data): Establecimiento
@@ -93,6 +127,39 @@ class EstablecimientoService implements EstablecimientoServiceInterface
 
             DB::commit();
             return $establecimientoActualizado;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Eliminar establecimiento (soft delete)
+     */
+    public function eliminar(int $id): bool
+    {
+        // Validar que el establecimiento existe
+        $establecimiento = $this->establecimientoRepository->findByIdOrFail($id);
+
+        DB::beginTransaction();
+        try {
+            $datosAnteriores = $establecimiento->toArray();
+
+            // Eliminar (soft delete si el modelo lo soporta)
+            $this->establecimientoRepository->delete($id);
+
+            // Auditoría
+            $this->auditoriaService->registrar(
+                'establecimientos',
+                $id,
+                'DELETE',
+                auth()->id(),
+                $datosAnteriores,
+                null
+            );
+
+            DB::commit();
+            return true;
         } catch (\Exception $e) {
             DB::rollBack();
             throw $e;
@@ -178,6 +245,7 @@ class EstablecimientoService implements EstablecimientoServiceInterface
             throw $e;
         }
     }
+
     /**
      * Obtener todos los establecimientos
      */
