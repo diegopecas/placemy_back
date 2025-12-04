@@ -25,6 +25,18 @@ class Mesa extends Model
         'activo' => 'boolean',
     ];
     
+    // Agregar numero_mesa como alias de identificacion_mesa para compatibilidad con frontend
+    protected $appends = ['numero_mesa'];
+    
+    /**
+     * Accessor: numero_mesa (alias de identificacion_mesa)
+     * Para compatibilidad con el frontend que espera numero_mesa
+     */
+    public function getNumeroMesaAttribute(): ?string
+    {
+        return $this->identificacion_mesa;
+    }
+    
     // Relaciones
     public function establecimiento()
     {

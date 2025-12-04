@@ -14,13 +14,28 @@ class MesaRepository extends BaseRepository
     }
     
     /**
-     * Buscar mesas por establecimiento
+     * Buscar mesas por establecimiento con relaciones y filtros opcionales
      */
-    public function findByEstablecimiento(int $establecimientoId): Collection
+    public function findByEstablecimiento(int $establecimientoId, array $filtros = []): Collection
     {
-        return $this->model::where('establecimiento_id', $establecimientoId)
+        $query = $this->model::where('establecimiento_id', $establecimientoId)
             ->where('activo', true)
-            ->get();
+            ->with(['estado', 'zona', 'staffAsignado.persona']);
+        
+        // Aplicar filtros opcionales
+        if (isset($filtros['zona_id'])) {
+            $query->where('zona_id', $filtros['zona_id']);
+        }
+        
+        if (isset($filtros['estado_id'])) {
+            $query->where('estado_id', $filtros['estado_id']);
+        }
+        
+        if (isset($filtros['capacidad_minima'])) {
+            $query->where('capacidad', '>=', $filtros['capacidad_minima']);
+        }
+        
+        return $query->orderBy('identificacion_mesa')->get();
     }
     
     /**
@@ -30,6 +45,8 @@ class MesaRepository extends BaseRepository
     {
         return $this->model::where('zona_id', $zonaId)
             ->where('activo', true)
+            ->with(['estado', 'zona', 'staffAsignado.persona'])
+            ->orderBy('identificacion_mesa')
             ->get();
     }
     
@@ -41,6 +58,8 @@ class MesaRepository extends BaseRepository
         return $this->model::where('establecimiento_id', $establecimientoId)
             ->where('estado_id', $estadoId)
             ->where('activo', true)
+            ->with(['estado', 'zona', 'staffAsignado.persona'])
+            ->orderBy('identificacion_mesa')
             ->get();
     }
     
@@ -79,6 +98,8 @@ class MesaRepository extends BaseRepository
     {
         return $this->model::where('staff_asignado_id', $staffId)
             ->where('activo', true)
+            ->with(['estado', 'zona', 'staffAsignado.persona'])
+            ->orderBy('identificacion_mesa')
             ->get();
     }
 }
