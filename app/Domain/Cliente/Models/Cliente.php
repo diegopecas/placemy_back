@@ -11,7 +11,18 @@ class Cliente extends Model
     protected $table = 'clientes';
     
     protected $fillable = [
-        'persona_id',
+        // NUEVOS CAMPOS DIRECTOS
+        'nombre',
+        'tipo_documento_id',
+        'numero_documento',
+        'telefono',
+        'email',
+        'sexo',
+        'dia_cumpleanos',
+        'mes_cumpleanos',
+        
+        // CAMPOS EXISTENTES
+        'persona_id',  // Ahora OPCIONAL
         'sobrenombre',
         'preferencias_gustos',
         'preferencias_no_gustos',
@@ -22,16 +33,25 @@ class Cliente extends Model
     // RELACIONES
     // =====================================================
     
+    /**
+     * Relación con PersonaNatural (OPCIONAL)
+     */
     public function persona()
     {
         return $this->belongsTo(PersonaNatural::class, 'persona_id');
     }
     
+    /**
+     * Relación con establecimientos
+     */
     public function establecimientos()
     {
         return $this->hasMany(ClienteEstablecimiento::class, 'cliente_id');
     }
     
+    /**
+     * Relación muchos a muchos con alergenos
+     */
     public function alergenos()
     {
         return $this->belongsToMany(
@@ -42,6 +62,9 @@ class Cliente extends Model
         )->withTimestamps();
     }
     
+    /**
+     * Relación con fechas especiales
+     */
     public function fechasEspeciales()
     {
         return $this->hasMany(ClienteFechaEspecial::class, 'cliente_id');

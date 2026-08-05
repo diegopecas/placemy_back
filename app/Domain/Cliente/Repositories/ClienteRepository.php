@@ -14,55 +14,41 @@ class ClienteRepository extends BaseRepository
     }
     
     /**
-     * Buscar cliente por persona_id
-     */
-    public function findByPersona(int $personaId): ?Cliente
-    {
-        return $this->model::where('persona_id', $personaId)->first();
-    }
-    
-    /**
-     * Verificar si existe un cliente con esa persona
-     */
-    public function existePersona(int $personaId, ?int $excludeId = null): bool
-    {
-        $query = $this->model::where('persona_id', $personaId);
-        
-        if ($excludeId) {
-            $query->where('id', '!=', $excludeId);
-        }
-        
-        return $query->exists();
-    }
-    
-    /**
      * Buscar cliente con relaciones completas
      */
     public function findByIdWithRelations(int $id): ?Cliente
     {
         return $this->model::with([
             'persona',
-            'establecimientos.establecimiento',
-            'establecimientos.zonaPreferida',
-            'alergenos',
-            'fechasEspeciales.tipoFecha'
+            'alergenos'
         ])->find($id);
     }
     
     /**
      * Buscar clientes con filtros
+     * ACTUALIZADO: Busca en campos directos de clientes
      */
     public function findWithFilters(array $filtros = []): Collection
     {
         $query = $this->model::with(['persona']);
         
-        // Búsqueda por nombre, documento
+        // Búsqueda por teléfono, documento o nombre
         if (isset($filtros['busqueda'])) {
             $busqueda = $filtros['busqueda'];
-            $query->whereHas('persona', function($q) use ($busqueda) {
-                $q->where('primer_nombre', 'like', "%{$busqueda}%")
-                  ->orWhere('primer_apellido', 'like', "%{$busqueda}%")
-                  ->orWhere('numero_documento', 'like', "%{$busqueda}%");
+            
+            $query->where(function($q) use ($busqueda) {
+                // Buscar en campos DIRECTOS de clientes
+                $q->where('telefono', 'like', "%{$busqueda}%")
+                  ->orWhere('numero_documento', 'like', "%{$busqueda}%")
+                  ->orWhere('nombre', 'like', "%{$busqueda}%");
+                
+                // TAMBIÉN buscar en persona si existe
+                $q->orWhereHas('persona', function($subQ) use ($busqueda) {
+                    $subQ->where('telefono', 'like', "%{$busqueda}%")
+                         ->orWhere('numero_documento', 'like', "%{$busqueda}%")
+                         ->orWhere('primer_nombre', 'like', "%{$busqueda}%")
+                         ->orWhere('primer_apellido', 'like', "%{$busqueda}%");
+                });
             });
         }
         

@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Domain\Cliente\Contracts\ClienteServiceInterface;
 use App\Domain\Cliente\Requests\CreateClienteRequest;
 use App\Domain\Cliente\Requests\UpdateClienteRequest;
-use App\Domain\Cliente\Requests\CreateClienteCompletoRequest;
-use App\Domain\Cliente\Requests\UpdateClienteCompletoRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -21,8 +19,8 @@ class ClienteController extends Controller
     }
     
     /**
-     * Listar clientes
-     * GET /api/cliente/clientes
+     * Listar/Buscar clientes
+     * GET /api/cliente/clientes?busqueda=xxx
      */
     public function index(Request $request): JsonResponse
     {
@@ -66,7 +64,7 @@ class ClienteController extends Controller
     }
     
     /**
-     * Crear cliente básico (sin relaciones)
+     * Crear cliente DIRECTO (nueva estructura sin persona)
      * POST /api/cliente/clientes
      */
     public function store(CreateClienteRequest $request): JsonResponse
@@ -89,31 +87,7 @@ class ClienteController extends Controller
     }
     
     /**
-     * Crear cliente completo (orquestador)
-     * POST /api/cliente/clientes/completo
-     * Crea: Cliente + Alérgenos + Fechas Especiales
-     */
-    public function storeCompleto(CreateClienteCompletoRequest $request): JsonResponse
-    {
-        try {
-            $cliente = $this->clienteService->crearCompleto($request->validated());
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Cliente completo creado exitosamente',
-                'data' => $cliente
-            ], 201);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-    
-    /**
-     * Actualizar cliente básico (sin relaciones)
+     * Actualizar cliente
      * PUT /api/cliente/clientes/{id}
      */
     public function update(UpdateClienteRequest $request, int $id): JsonResponse
@@ -124,30 +98,6 @@ class ClienteController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Cliente actualizado exitosamente',
-                'data' => $cliente
-            ], 200);
-            
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => $e->getMessage()
-            ], 500);
-        }
-    }
-    
-    /**
-     * Actualizar cliente completo (orquestador)
-     * PUT /api/cliente/clientes/{id}/completo
-     * Actualiza: Cliente + PersonaNatural + Sync Alérgenos + Fechas Especiales
-     */
-    public function updateCompleto(UpdateClienteCompletoRequest $request, int $id): JsonResponse
-    {
-        try {
-            $cliente = $this->clienteService->actualizarCompleto($id, $request->validated());
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Cliente completo actualizado exitosamente',
                 'data' => $cliente
             ], 200);
             
